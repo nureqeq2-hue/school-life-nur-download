@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Life NUR - Admin Login</title>
+<style>
+body{font-family:Arial,sans-serif;background:#eef3f8;margin:0;padding:20px;color:#172033}
+main{max-width:480px;margin:35px auto;background:white;padding:24px;border-radius:18px;box-shadow:0 5px 25px #0001}
+h2{text-align:center;color:#174ea6}
+input,button{box-sizing:border-box;width:100%;padding:14px;margin:9px 0;border-radius:9px;font-size:16px}
+input{border:1px solid #ccd3df}
+button{background:#174ea6;color:white;border:0;font-weight:bold}
+a{display:block;background:#174ea6;color:white;text-decoration:none;padding:14px;margin:12px 0;border-radius:9px}
+.note{background:#fff3cd;padding:13px;border-radius:9px;line-height:1.7}
+#status{line-height:1.6;color:#b42318}
+</style>
+</head>
+<body>
+<main>
+<h2>School Life NUR</h2>
+<div class="note">এই ওয়েবসাইট ও অ্যাপের মালিক MR SHEIKH NUR। অনুমোদিত অ্যাডমিন ছাড়া প্রবেশ নিষেধ। সঠিক ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।</div>
+
+<section id="login">
+<h3>অ্যাডমিন লগইন</h3>
+<input id="email" type="email" placeholder="ইমেইল ঠিকানা" autocomplete="username">
+<input id="password" type="password" placeholder="পাসওয়ার্ড" autocomplete="current-password">
+<button id="loginBtn">লগইন করুন</button>
+<p id="status"></p>
+</section>
+
+<section id="panel" hidden>
+<h3>অ্যাডমিন প্রবেশ অনুমোদিত</h3>
+<p>তোমার অ্যাডমিন অ্যাকাউন্ট যাচাই হয়েছে।</p>
+<a href="master.html">Master Page খুলুন</a>
+<a href="https://github.com/nureqeq2-hue/school-life-nur">অ্যাপের সোর্স কোড</a>
+<a href="https://github.com/nureqeq2-hue/school-life-nur-download">ওয়েবসাইটের সোর্স কোড</a>
+<button id="logoutBtn">লগআউট</button>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const client = supabase.createClient(
+  'https://wkglttxxmmtvskiggfst.supabase.co',
+  'sb_publishable_sp9YptD9soa1UO2TPtdPtQ_AtnS4rro'
+);
+
+const loginBox = document.getElementById('login');
+const panel = document.getElementById('panel');
+const statusBox = document.getElementById('status');
+
+async function checkAdmin(){
+  const {data: sessionData} = await client.auth.getSession();
+  if(!sessionData.session){
+    loginBox.hidden = false;
+    panel.hidden = true;
+    return;
+  }
+  const {data, error} = await client.rpc('is_current_user_admin');
+  if(error || data !== true){
+    await client.auth.signOut();
+    loginBox.hidden = false;
+    panel.hidden = true;
+    statusBox.textContent = 'এই অ্যাকাউন্টের অ্যাডমিন অনুমতি নেই।';
+    return;
+  }
+  loginBox.hidden = true;
+  panel.hidden = false;
+}
+
+document.getElementById('loginBtn').addEventListener('click', async()=>{
+  statusBox.textContent = 'যাচাই করা হচ্ছে...';
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if(!email || !password){
+    statusBox.textContent = 'ইমেইল ও পাসওয়ার্ড লিখুন।';
+    return;
+  }
+  const {error} = await client.auth.signInWithPassword({email,password});
+  if(error){
+    statusBox.textContent = 'লগইন হয়নি। ইমেইল ও পাসওয়ার্ড আবার পরীক্ষা করুন।';
+    return;
+  }
+  await checkAdmin();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async()=>{
+  await client.auth.signOut();
+  panel.hidden = true;
+  loginBox.hidden = false;
+  statusBox.textContent = 'লগআউট সম্পন্ন হয়েছে।';
+});
+
+checkAdmin();
+</script>
+</body>
+</html>
