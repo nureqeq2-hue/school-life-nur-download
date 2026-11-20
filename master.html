@@ -3,26 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>School Life NUR - Master Access</title>
+<title>School Life NUR - Secure Master Access</title>
 <style>
-body{font-family:Arial,sans-serif;background:#eef3f8;margin:0;padding:20px;color:#172033}
-main{max-width:650px;margin:auto;background:white;padding:22px;border-radius:18px}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#eef3f8;margin:0;padding:18px;color:#172033}
+main{max-width:650px;margin:28px auto;background:#fff;padding:22px;border-radius:18px;box-shadow:0 5px 25px #0001}
 h1{text-align:center;color:#174ea6}
-a{display:block;text-decoration:none;background:#174ea6;color:white;padding:16px;margin:12px 0;border-radius:10px;font-weight:bold}
+.sub{text-align:center;line-height:1.6}
+a,.logout{display:block;text-decoration:none;background:#174ea6;color:white;padding:15px;margin:12px 0;border-radius:10px;font-weight:bold;text-align:center;border:0;width:100%;font-size:16px}
 .note{background:#fff3cd;padding:14px;border-radius:10px;line-height:1.7}
+#status{text-align:center;line-height:1.7;color:#174ea6}
+#dashboard[hidden]{display:none}
+.logout{background:#a61b1b}
 </style>
 </head>
 <body>
 <main>
 <h1>School Life NUR</h1>
-<p style="text-align:center">এক জায়গা থেকে অ্যাপ ও ওয়েবসাইট পরিচালনার প্রয়োজনীয় লিংক</p>
+<p id="status">🔐 অ্যাডমিন পরিচয় যাচাই হচ্ছে...</p>
+<section id="dashboard" hidden>
+<p class="sub">এক জায়গা থেকে অ্যাপ ও ওয়েবসাইট পরিচালনার প্রয়োজনীয় লিংক</p>
+<div class="note">👑 মালিক ও প্রধান Super Admin: MR SHEIKH NUR। অনুমোদিত অ্যাডমিন ছাড়া প্রবেশ নিষেধ। QR কোড কোনো লগইন অনুমতি দেয় না।</div>
 <a href="https://nureqeq2-hue.github.io/school-life-nur-download/">📱 অফিসিয়াল ওয়েবসাইট ও অ্যাপ</a>
 <a href="https://github.com/nureqeq2-hue/school-life-nur">💻 অ্যাপের মূল সোর্স কোড</a>
 <a href="https://github.com/nureqeq2-hue/school-life-nur-download">🌐 ওয়েবসাইটের সোর্স কোড</a>
 <a href="https://github.com/nureqeq2-hue/school-life-nur/releases">📦 অ্যাপের রিলিজ ও আপডেট</a>
 <a href="https://github.com/nureqeq2-hue/school-life-nur/settings">⚙️ অ্যাপ রিপোজিটরি সেটিংস</a>
 <a href="https://github.com/nureqeq2-hue/school-life-nur-download/settings/pages">🛠️ ওয়েবসাইট প্রকাশনা সেটিংস</a>
-<div class="note">নিরাপত্তা: QR কোড কোনো পাসওয়ার্ড বা গোপন অনুমতি দেয় না। সম্পাদনার জন্য নিজের GitHub অ্যাকাউন্টে লগইন করতে হবে।</div>
+<button class="logout" id="logoutBtn">লগআউট</button>
+</section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const client=supabase.createClient(
+'https://wkglttxxmmtvskiggfst.supabase.co',
+'sb_publishable_sp9YptD9soa1UO2TPtdPtQ_AtnS4rro'
+);
+const statusBox=document.getElementById('status');
+const dashboard=document.getElementById('dashboard');
+let redirected=false;
+function goLogin(){
+ if(!redirected){redirected=true;location.replace('admin-login.html');}
+}
+async function protectPage(){
+ try{
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session){goLogin();return;}
+  const {data,error}=await client.rpc('is_current_user_admin');
+  if(error||data!==true){
+   await client.auth.signOut();
+   goLogin();
+   return;
+  }
+  statusBox.textContent='✅ অ্যাডমিন পরিচয় যাচাই সম্পন্ন।';
+  dashboard.hidden=false;
+ }catch(e){
+  statusBox.textContent='যাচাই করা যায়নি। লগইন পেজে ফিরে যান।';
+  setTimeout(goLogin,1000);
+ }
+}
+client.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'||!session)goLogin();
+});
+document.getElementById('logoutBtn').addEventListener('click',async()=>{
+ await client.auth.signOut();
+ goLogin();
+});
+protectPage();
+</script>
 </body>
 </html>
